@@ -1,0 +1,497 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS
+   Extracted from the blue reference poster: near-black navy at
+   the edges, royal blue through the middle, a cyan bloom in the
+   lower centre, chrome type and translucent navy glass.
+   ============================================================ */
+
+@theme inline {
+  --color-bg-0: #06141d;
+  --color-bg-1: #13506c;
+  --color-accent: #87ceeb;
+  --color-accent-light: #c2e6f5;
+  --color-accent-deep: #216e8c;
+  --color-ink: #eef7fb;
+  --color-muted: #93a9b8;
+  --color-line: rgba(255, 255, 255, 0.12);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-clash), var(--font-jakarta), ui-sans-serif, sans-serif;
+
+  --radius-card: 16px;
+  --radius-lg: 24px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  --bg-0: #06141d;
+  --bg-1: #13506c;
+  /* #87ceeb is the single brand colour; the rest are tints and shades of it
+     so gradients, glows and depth all stay in one hue. */
+  --sky: #87ceeb;
+  --sky-light: #c2e6f5;
+  --sky-deep: #216e8c;
+  --sky-deeper: #124154;
+  --ink: #eef7fb;
+  --muted: rgba(243, 250, 255, 0.98);
+
+  --glass-fill: linear-gradient(
+    180deg,
+    rgba(72, 148, 184, 0.34) 0%,
+    rgba(7, 32, 46, 0.62) 100%
+  );
+  --glass-border: rgba(196, 232, 246, 0.26);
+  --glass-blur: blur(18px) saturate(1.25);
+
+  --nav-h: 68px;
+  color-scheme: dark;
+}
+
+/* ============================================================
+   BASE
+   Everything here lives in the base layer so Tailwind utilities
+   always win over it.
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* No `scroll-behavior: smooth` here: Lenis owns the easing, and a native
+       smooth scroll on top of it double-animates every anchor jump and fights
+       Next's scroll restoration on route changes. */
+    scroll-behavior: auto;
+    /* Reserve the scrollbar gutter so locking the scroll for an overlay
+       (showreel, mobile menu) cannot shift the layout sideways. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--bg-0);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* `clip`, not `hidden`: `hidden` promotes the body to a scroll container,
+       which breaks ScrollTrigger's pinning and `position: sticky` inside it.
+       `hidden` stays first as the fallback for browsers without `clip`. */
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  /* Lenis owns the scroll once it mounts. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--sky);
+    color: var(--bg-0);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--sky);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Section anchors clear the sticky nav. */
+  [id] {
+    scroll-margin-top: calc(var(--nav-h) + 1.5rem);
+  }
+
+  /* Tailwind v4's preflight leaves buttons at `default`; anything clickable
+     should show the standard pointer, the way links already do. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* ============================================================
+   COMPONENT CLASSES
+   ============================================================ */
+
+@layer components {
+  .skip-link {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    translate: -50% -140%;
+    z-index: 200;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0 0 12px 12px;
+    background: var(--sky);
+    color: var(--bg-0);
+    font-weight: 600;
+    transition: translate 0.2s var(--ease-out-expo);
+  }
+  .skip-link:focus-visible {
+    translate: -50% 0;
+  }
+
+  /* ---------- Background field + grain ---------- */
+
+  .bg-field {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        125% 78% at 50% 112%,
+        rgba(135, 206, 235, 0.9) 0%,
+        rgba(135, 206, 235, 0.3) 38%,
+        rgba(135, 206, 235, 0) 70%
+      ),
+      radial-gradient(
+        70% 52% at 4% 18%,
+        rgba(135, 206, 235, 0.34) 0%,
+        rgba(135, 206, 235, 0) 68%
+      ),
+      radial-gradient(
+        70% 52% at 96% 70%,
+        rgba(135, 206, 235, 0.32) 0%,
+        rgba(135, 206, 235, 0) 68%
+      ),
+      linear-gradient(
+        180deg,
+        #0a2d43 0%,
+        #17658c 40%,
+        #155d81 62%,
+        #092a3d 100%
+      );
+  }
+
+  /* Film grain — SVG fractal noise at 5%. */
+  .bg-grain {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  /* ---------- Chrome type ---------- */
+
+  .text-chrome {
+    background-image:
+      linear-gradient(
+        115deg,
+        rgba(255, 255, 255, 0) 38%,
+        rgba(255, 255, 255, 0.92) 48%,
+        rgba(255, 255, 255, 0) 58%
+      ),
+      linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #eef7fb 38%,
+        #dceef7 46%,
+        #8fb3c4 60%,
+        #cfe3ee 74%,
+        #ffffff 100%
+      );
+    background-size:
+      260% 100%,
+      100% 100%;
+    background-position:
+      180% 0,
+      0 0;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 26px rgba(6, 30, 42, 0.6))
+      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.25));
+    animation: chrome-sweep 6.5s var(--ease-out-expo) infinite;
+  }
+
+  /* ---------- Glass surfaces ---------- */
+
+  .glass {
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 18px 50px -24px rgba(0, 0, 0, 0.8);
+  }
+
+  .glass-soft {
+    background: rgba(14, 48, 66, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* Glossy electric-blue button, mirroring the poster's blue pill. */
+  /* The brand colour is light, so the label is dark ink rather than white —
+     white on #87ceeb is about 1.9:1 and unreadable. */
+  .btn-glossy {
+    position: relative;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0) 48%
+      ),
+      linear-gradient(180deg, #a8dcf2 0%, #87ceeb 52%, #5aacce 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      inset 0 -1px 0 rgba(3, 20, 30, 0.14),
+      0 10px 30px -10px rgba(135, 206, 235, 0.7);
+    color: var(--bg-0);
+  }
+  .btn-glossy:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(3, 20, 30, 0.14),
+      0 16px 40px -12px rgba(135, 206, 235, 0.9);
+  }
+
+  /* ---------- Type helpers ---------- */
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 0.88;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .display-xl {
+    font-size: clamp(3.5rem, 11.5vw, 8.5rem);
+  }
+  .display-lg {
+    font-size: clamp(2.6rem, 8vw, 6rem);
+  }
+  .display-md {
+    font-size: clamp(2rem, 5.2vw, 3.75rem);
+  }
+
+  .kicker {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-size: clamp(0.95rem, 2.2vw, 1.35rem);
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  /* ---------- Layout ---------- */
+
+  .shell {
+    width: 100%;
+    max-width: 88rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 3.5rem);
+  }
+
+  .section-pad {
+    padding-block: clamp(3.5rem, 6.5vw, 5.75rem);
+  }
+
+  /* ---------- Masks ---------- */
+
+  .mask-y {
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    );
+  }
+
+  .mask-x {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      #000 8%,
+      #000 92%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      #000 8%,
+      #000 92%,
+      transparent 100%
+    );
+  }
+
+  /* ---------- Motion utilities ---------- */
+
+  .animate-rail-up {
+    animation: rail-up var(--rail-duration, 40s) linear infinite;
+  }
+  .animate-rail-down {
+    animation: rail-down var(--rail-duration, 48s) linear infinite;
+  }
+  .animate-marquee {
+    animation: marquee-x var(--marquee-duration, 38s) linear infinite;
+  }
+  .animate-halo {
+    animation: halo-breathe 6s ease-in-out infinite;
+  }
+  .animate-bob {
+    animation: float-bob var(--bob-duration, 7s) ease-in-out infinite;
+    animation-delay: var(--bob-delay, 0s);
+  }
+
+  /* ---------- Misc ---------- */
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .placeholder-fill {
+    background:
+      linear-gradient(
+        135deg,
+        rgba(135, 206, 235, 0.24) 0%,
+        rgba(33, 110, 140, 0.4) 45%,
+        rgba(5, 17, 26, 0.9) 100%
+      ),
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.045) 0px,
+        rgba(255, 255, 255, 0.045) 2px,
+        transparent 2px,
+        transparent 12px
+      );
+  }
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+
+@keyframes chrome-sweep {
+  0% {
+    background-position:
+      180% 0,
+      0 0;
+  }
+  22%,
+  100% {
+    background-position:
+      -80% 0,
+      0 0;
+  }
+}
+
+@keyframes rail-up {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes rail-down {
+  from {
+    transform: translate3d(0, -50%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes marquee-x {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes halo-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes float-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(calc(var(--tilt, 0deg) * -1));
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .text-chrome {
+    animation: none;
+    background-position:
+      -80% 0,
+      0 0;
+  }
+}
